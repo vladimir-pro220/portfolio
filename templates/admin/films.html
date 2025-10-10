@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Films - Système Films & Séries</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .table-responsive {
+            max-height: 500px;
+        }
+        .thumbnail-img {
+            width: 60px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 text-gray-800">Gestion des Films</h1>
+            <a href="{{ url_for('add_film') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                <i class="fas fa-plus fa-sm text-white-50 me-1"></i> Ajouter un Film
+            </a>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Liste des Films</h6>
+                <span class="badge bg-primary">{{ films|length }} films</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Miniature</th>
+                                <th>Titre</th>
+                                <th>Année</th>
+                                <th>Prix</th>
+                                <th>Statut</th>
+                                <th>Ajouté le</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for film in films %}
+                            <tr>
+                                <td>{{ film.id }}</td>
+                                <td>
+                                    {% if film.thumbnail %}
+                                        <img src="{{ url_for('get_thumbnail', filename=film.thumbnail) }}" 
+                                             alt="{{ film.title }}" class="thumbnail-img">
+                                    {% else %}
+                                        <div class="thumbnail-img bg-light d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-film text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ film.title }}</strong>
+                                    <div class="text-muted small">{{ film.description[:50] }}...</div>
+                                </td>
+                                <td>{{ film.year }}</td>
+                                <td>{{ film.price }} FCFA</td>
+                                <td>
+                                    {% if film.is_active %}
+                                        <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactif</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ film.date_added.strftime('%Y-%m-%d') if film.date_added else 'N/A' }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('edit_film', film_id=film.id) }}" 
+                                           class="btn btn-warning" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('delete_film', film_id=film.id) }}" 
+                                           class="btn btn-danger" title="Supprimer"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce film ?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        <button class="btn btn-info" title="Voir détails">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-film fa-3x mb-3"></i>
+                                        <p>Aucun film trouvé</p>
+                                        <a href="{{ url_for('add_film') }}" class="btn btn-primary mt-2">
+                                            <i class="fas fa-plus me-2"></i>Ajouter votre premier film
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ episode.title }} - {{ episode.season.series.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6f42c1;
+            --secondary-color: #59359a;
+            --dark-bg: #1a1a1a;
+            --player-bg: #000000;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
+            color: white;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .player-container {
+            background: var(--player-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            margin-bottom: 2rem;
+        }
+
+        .custom-video-player {
+            width: 100%;
+            height: auto;
+            max-height: 70vh;
+            background: #000;
+        }
+
+        .episode-info {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .episode-title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .series-title {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 1rem;
+        }
+
+        .episode-meta {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .episode-navigation {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .episode-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .episode-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: white;
+        }
+
+        .episode-item:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .episode-item.current {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+
+        .episode-number {
+            background: rgba(255,255,255,0.2);
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .episode-item.current .episode-number {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .back-btn, .download-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            border: none;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(111, 66, 193, 0.3);
+            color: white;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #1cc88a 0%, #17a085 100%);
+            color: white;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(28, 200, 138, 0.3);
+            color: white;
+        }
+
+        .navbar {
+            background: rgba(0,0,0,0.9) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+        }
+
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--primary-color);
+            font-size: 3rem;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .nav-episode-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-episode-btn:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .nav-episode-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .episode-title {
+                font-size: 1.5rem;
+            }
+            
+            .episode-meta {
+                gap: 1rem;
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .episode-info,
+            .episode-navigation {
+                padding: 1rem;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('client_index') }}">
+                <i class="fas fa-play-circle me-2"></i>Mon Espace Client
+            </a>
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('client_index') }}" class="back-btn">
+                    <i class="fas fa-arrow-left me-2"></i>Retour
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Lecteur vidéo -->
+        <div class="player-container position-relative">
+            <div class="loading-spinner" id="loadingSpinner">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <video id="videoPlayer" class="custom-video-player" controls preload="metadata">
+                <source src="{{ url_for('stream_episode', episode_id=episode.id) }}" type="video/mp4">
+                Votre navigateur ne supporte pas la lecture vidéo HTML5.
+            </video>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Informations de l'épisode -->
+                <div class="episode-info">
+                    <div class="series-title">
+                        {{ episode.season.series.title }} - Saison {{ episode.season.season_number }}
+                    </div>
+                    <h1 class="episode-title">
+                        Épisode {{ episode.episode_number }}: {{ episode.title }}
+                    </h1>
+                    
+                    <div class="episode-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>{{ episode.season.year }}</span>
+                        </div>
+                        {% if episode.duration %}
+                        <div class="meta-item">
+                            <i class="fas fa-clock"></i>
+                            <span>{{ episode.get_formatted_duration() }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="meta-item">
+                            <i class="fas fa-list"></i>
+                            <span>Épisode {{ episode.episode_number }} sur {{ all_episodes|length }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Navigation entre épisodes -->
+                    <div class="nav-buttons">
+                        {% set prev_episode = all_episodes|selectattr('episode_number', 'equalto', episode.episode_number - 1)|first %}
+                        {% set next_episode = all_episodes|selectattr('episode_number', 'equalto', episode.episode_number + 1)|first %}
+                        
+                        {% if prev_episode %}
+                            <a href="{{ url_for('watch_episode', episode_id=prev_episode.id) }}" class="nav-episode-btn">
+                                <i class="fas fa-step-backward"></i>
+                                Épisode précédent
+                            </a>
+                        {% endif %}
+                        
+                        {% if next_episode %}
+                            <a href="{{ url_for('watch_episode', episode_id=next_episode.id) }}" class="nav-episode-btn">
+                                <i class="fas fa-step-forward"></i>
+                                Épisode suivant
+                            </a>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid">
+                        <a href="{{ url_for('download_content', content_type='episode', content_id=episode.id) }}" 
+                           class="download-btn">
+                            <i class="fas fa-download me-2"></i>Télécharger cet épisode
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Liste des épisodes -->
+                <div class="episode-navigation">
+                    <h4 class="mb-3">
+                        <i class="fas fa-list me-2"></i>
+                        Saison {{ episode.season.season_number }}
+                    </h4>
+                    
+                    <div class="episode-list">
+                        {% for ep in all_episodes %}
+                        <a href="{{ url_for('watch_episode', episode_id=ep.id) }}" 
+                           class="episode-item {% if ep.id == episode.id %}current{% endif %}">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <div class="episode-number">{{ ep.episode_number }}</div>
+                                <div>
+                                    <div class="fw-bold">{{ ep.title }}</div>
+                                    {% if ep.duration %}
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>{{ ep.get_formatted_duration() }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if ep.id == episode.id %}
+                                <i class="fas fa-play text-white"></i>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('videoPlayer');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            
+            // Gestion du loading
+            video.addEventListener('loadstart', function() {
+                loadingSpinner.style.display = 'block';
+            });
+            
+            video.addEventListener('canplay', function() {
+                loadingSpinner.style.display = 'none';
+            });
+            
+            video.addEventListener('waiting', function() {
+                loadingSpinner.style.display = 'block';
+            });
+            
+            video.addEventListener('playing', function() {
+                loadingSpinner.style.display = 'none';
+            });
+            
+            // Sauvegarde de la position de lecture
+            const episodeId = '{{ episode.id }}';
+            const storageKey = `video_position_episode_${episodeId}`;
+            
+            // Charger la position sauvegardée
+            const savedPosition = localStorage.getItem(storageKey);
+            if (savedPosition && parseFloat(savedPosition) > 0) {
+                video.addEventListener('loadedmetadata', function() {
+                    video.currentTime = parseFloat(savedPosition);
+                });
+            }
+            
+            // Sauvegarder la position toutes les 5 secondes
+            setInterval(function() {
+                if (video.currentTime > 0) {
+                    localStorage.setItem(storageKey, video.currentTime.toString());
+                }
+            }, 5000);
+            
+            // Auto-play de l'épisode suivant
+            video.addEventListener('ended', function() {
+                const nextEpisodeLink = document.querySelector('.nav-episode-btn[href*="episode_id"]:last-of-type');
+                if (nextEpisodeLink && nextEpisodeLink.textContent.includes('suivant')) {
+                    showNotification('Lecture automatique du prochain épisode dans 10 secondes...', 'info', {
+                        action: 'Annuler',
+                        countdown: 10,
+                        callback: function() {
+                            window.location.href = nextEpisodeLink.href;
+                        }
+                    });
+                } else {
+                    showNotification('Fin de la saison !', 'success');
+                }
+            });
+            
+            // Sauvegarder avant de quitter la page
+            window.addEventListener('beforeunload', function() {
+                if (video.currentTime > 0 && !video.ended) {
+                    localStorage.setItem(storageKey, video.currentTime.toString());
+                }
+            });
+            
+            // Contrôles clavier
+            document.addEventListener('keydown', function(e) {
+                if (e.target.tagName.toLowerCase() !== 'input') {
+                    switch(e.code) {
+                        case 'Space':
+                            e.preventDefault();
+                            if (video.paused) {
+                                video.play();
+                            } else {
+                                video.pause();
+                            }
+                            break;
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            video.currentTime = Math.max(0, video.currentTime - 10);
+                            break;
+                        case 'ArrowRight':
+                            e.preventDefault();
+                            video.currentTime = Math.min(video.duration, video.currentTime + 10);
+                            break;
+                        case 'KeyF':
+                            e.preventDefault();
+                            if (video.requestFullscreen) {
+                                if (document.fullscreenElement) {
+                                    document.exitFullscreen();
+                                } else {
+                                    video.requestFullscreen();
+                                }
+                            }
+                            break;
+                        case 'KeyN':
+                            e.preventDefault();
+                            const nextBtn = document.querySelector('.nav-episode-btn[href*="episode_id"]:last-of-type');
+                            if (nextBtn && nextBtn.textContent.includes('suivant')) {
+                                window.location.href = nextBtn.href;
+                            }
+                            break;
+                        case 'KeyP':
+                            e.preventDefault();
+                            const prevBtn = document.querySelector('.nav-episode-btn[href*="episode_id"]:first-of-type');
+                            if (prevBtn && prevBtn.textContent.includes('précédent')) {
+                                window.location.href = prevBtn.href;
+                            }
+                            break;
+                    }
+                }
+            });
+            
+            // Double-clic pour plein écran
+            video.addEventListener('dblclick', function() {
+                if (video.requestFullscreen) {
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else {
+                        video.requestFullscreen();
+                    }
+                }
+            });
+            
+            // Notification de reprise de lecture
+            if (savedPosition && parseFloat(savedPosition) > 30) {
+                video.addEventListener('loadedmetadata', function() {
+                    showNotification('Reprendre la lecture là où vous vous êtes arrêté ?', 'info', {
+                        action: 'Reprendre',
+                        callback: function() {
+                            video.currentTime = parseFloat(savedPosition);
+                        }
+                    });
+                }, { once: true });
+            }
+            
+            // Fonction de notification avec countdown
+            function showNotification(message, type = 'info', options = {}) {
+                const notification = document.createElement('div');
+                notification.className = `alert alert-${type} position-fixed d-flex align-items-center justify-content-between`;
+                notification.style.cssText = `
+                    top: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                    min-width: 350px;
+                    opacity: 0;
+                    transform: translateX(100%);
+                    transition: all 0.3s ease;
+                `;
+                
+                let notificationHTML = `<span id="notificationMessage">${message}</span>`;
+                if (options.action) {
+                    notificationHTML += `
+                        <div>
+                            <button class="btn btn-sm btn-primary me-2" onclick="handleNotificationAction(this, '${options.action}')">
+                                ${options.action}
+                            </button>
+                            <button class="btn-close" onclick="closeNotification(this)"></button>
+                        </div>
+                    `;
+                } else {
+                    notificationHTML += `<button class="btn-close" onclick="closeNotification(this)"></button>`;
+                }
+                
+                notification.innerHTML = notificationHTML;
+                document.body.appendChild(notification);
+                
+                // Animation d'entrée
+                setTimeout(() => {
+                    notification.style.opacity = '1';
+                    notification.style.transform = 'translateX(0)';
+                }, 100);
+                
+                // Countdown si spécifié
+                if (options.countdown) {
+                    let timeLeft = options.countdown;
+                    const messageSpan = notification.querySelector('#notificationMessage');
+                    const originalMessage = message;
+                    
+                    const countdownInterval = setInterval(() => {
+                        timeLeft--;
+                        messageSpan.textContent = `${originalMessage} (${timeLeft}s)`;
+                        
+                        if (timeLeft <= 0) {
+                            clearInterval(countdownInterval);
+                            if (options.callback) {
+                                options.callback();
+                            }
+                            closeNotification(notification.querySelector('.btn-close'));
+                        }
+                    }, 1000);
+                    
+                    // Stocker l'interval pour pouvoir l'annuler
+                    notification.countdownInterval = countdownInterval;
+                }
+                
+                // Fermeture automatique sans countdown
+                if (!options.action && !options.countdown) {
+                    setTimeout(() => {
+                        closeNotification(notification.querySelector('.btn-close'));
+                    }, 5000);
+                }
+            }
+            
+            // Fonctions globales pour les boutons de notification
+            window.handleNotificationAction = function(button, action) {
+                const notification = button.closest('.alert');
+                if (notification.countdownInterval) {
+                    clearInterval(notification.countdownInterval);
+                }
+                
+                if (action === 'Reprendre') {
+                    video.currentTime = parseFloat(savedPosition);
+                } else if (action === 'Annuler') {
+                    // Ne rien faire, juste fermer
+                }
+                
+                closeNotification(button.nextElementSibling);
+            };
+            
+            window.closeNotification = function(closeButton) {
+                const notification = closeButton.closest('.alert');
+                if (notification.countdownInterval) {
+                    clearInterval(notification.countdownInterval);
+                }
+                
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            };
+        });
+    </script>
+</body>
+</html>

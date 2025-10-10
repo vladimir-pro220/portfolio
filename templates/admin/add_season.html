@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter une Saison - {{ series.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .episode-file {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .episode-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .episode-item {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+        .sortable-ghost {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 text-gray-800">Ajouter une Saison à: {{ series.title }}</h1>
+            <a href="{{ url_for('admin_seasons', series_id=series.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Retour aux saisons
+            </a>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Informations de la Saison</h6>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('add_season_post', series_id=series.id) }}" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="season_number" class="form-label">Numéro de Saison *</label>
+                            <input type="number" class="form-control" id="season_number" 
+                                   name="season_number" min="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="year" class="form-label">Année *</label>
+                            <input type="number" class="form-control" id="year" 
+                                   name="year" min="1900" max="2030" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="price" class="form-label">Prix (FCFA) *</label>
+                            <input type="number" class="form-control" id="price" 
+                                   name="price" min="0" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="mb-3">Épisodes de la Saison</h5>
+
+                    <div class="episode-file mb-4">
+                        <label for="episodes_files" class="form-label">Upload des Épisodes *</label>
+                        <input type="file" class="form-control" id="episodes_files" 
+                               name="episodes_files" accept="video/*" multiple required>
+                        <div class="form-text">Sélectionnez tous les fichiers épisodes de cette saison</div>
+                        <div class="form-text text-warning">Taille maximale par fichier: 500MB</div>
+                        <div class="form-text">Formats acceptés: MP4, AVI, MKV, MOV, WMV</div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Les épisodes seront triés par ordre alphabétique de nom de fichier.
+                        Assurez-vous que les noms de fichiers contiennent le numéro d'épisode.
+                    </div>
+
+                    <div id="episodes-preview" class="d-none">
+                        <h6 class="mb-3">Aperçu des épisodes détectés:</h6>
+                        <div class="episode-list" id="episodes-list">
+                            <!-- Les épisodes seront ajoutés ici dynamiquement -->
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning d-none" id="episodes-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="warning-message"></span>
+                    </div>
+
+                    <div class="alert alert-success d-none" id="episodes-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span id="success-message"></span>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="reset" class="btn btn-secondary me-md-2" onclick="resetForm()">
+                            <i class="fas fa-undo me-2"></i>Réinitialiser
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                            <i class="fas fa-save me-2"></i>Ajouter la Saison avec Épisodes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const episodesFiles = document.getElementById('episodes_files');
+            const episodesPreview = document.getElementById('episodes-preview');
+            const episodesList = document.getElementById('episodes-list');
+            const warningAlert = document.getElementById('episodes-warning');
+            const successAlert = document.getElementById('episodes-success');
+            const submitBtn = document.getElementById('submit-btn');
+
+            episodesFiles.addEventListener('change', function(event) {
+                const files = event.target.files;
+                episodesList.innerHTML = '';
+                
+                if (files.length === 0) {
+                    episodesPreview.classList.add('d-none');
+                    warningAlert.classList.add('d-none');
+                    successAlert.classList.add('d-none');
+                    return;
+                }
+
+                // Trier les fichiers par nom
+                const sortedFiles = Array.from(files).sort((a, b) => {
+                    return a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'});
+                });
+
+                let hasLargeFile = false;
+                let totalSize = 0;
+
+                sortedFiles.forEach((file, index) => {
+                    // Vérifier la taille
+                    if (file.size > 500 * 1024 * 1024) {
+                        hasLargeFile = true;
+                    }
+                    totalSize += file.size;
+
+                    // Extraire le numéro d'épisode du nom de fichier
+                    const episodeNumber = extractEpisodeNumber(file.name, index + 1);
+                    
+                    const episodeItem = document.createElement('div');
+                    episodeItem.className = 'episode-item';
+                    episodeItem.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Épisode ${episodeNumber}</strong>
+                                <div class="text-muted small">${file.name}</div>
+                                <div class="text-muted small">${formatFileSize(file.size)}</div>
+                            </div>
+                            <span class="badge bg-primary">${index + 1}</span>
+                        </div>
+                        <input type="hidden" name="episode_${index}" value="${file.name}">
+                    `;
+                    episodesList.appendChild(episodeItem);
+                });
+
+                // Afficher les messages d'alerte
+                if (hasLargeFile) {
+                    warningAlert.classList.remove('d-none');
+                    document.getElementById('warning-message').textContent = 
+                        'Certains fichiers dépassent 500MB. Ils pourraient ne pas être uploadés correctement.';
+                    submitBtn.disabled = true;
+                } else {
+                    warningAlert.classList.add('d-none');
+                    submitBtn.disabled = false;
+                }
+
+                successAlert.classList.remove('d-none');
+                document.getElementById('success-message').textContent = 
+                    `${files.length} épisode(s) détecté(s) - ${formatFileSize(totalSize)} total`;
+
+                episodesPreview.classList.remove('d-none');
+            });
+
+            function extractEpisodeNumber(filename, defaultNumber) {
+                // Essayez d'extraire le numéro d'épisode du nom de fichier
+                const match = filename.match(/(\d+)/);
+                return match ? parseInt(match[1]) : defaultNumber;
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function resetForm() {
+                episodesPreview.classList.add('d-none');
+                warningAlert.classList.add('d-none');
+                successAlert.classList.add('d-none');
+                episodesList.innerHTML = '';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
+
+

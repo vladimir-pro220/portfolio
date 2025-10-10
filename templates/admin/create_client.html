@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Génération des Identifiants Client</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6f42c1;
+            --secondary-color: #59359a;
+            --success-color: #1cc88a;
+            --light-bg: #f8f9fc;
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 1.5rem;
+        }
+        
+        .generated-field {
+            background-color: #f8f9fa;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #495057;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        
+        .copy-btn {
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 8px;
+        }
+        
+        .copy-btn:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .credentials-box {
+            background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
+            border-left: 4px solid var(--success-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        
+        .btn-purple {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-purple:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .thumbnail-sm {
+            width: 50px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        
+        .selected-item {
+            background-color: #e9ecef;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            padding-left: 40px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+
+        .content-item {
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .content-item.hidden {
+            display: none;
+        }
+
+        .content-item:hover {
+            background-color: #f8f9fa;
+            border-color: var(--primary-color);
+        }
+
+        .no-results {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        /* Styles pour la page de succès */
+        .success-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .success-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .success-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(50px);
+            transition: transform 0.3s ease;
+        }
+
+        .success-overlay.show .success-container {
+            transform: translateY(0);
+        }
+
+        .success-header {
+            background: linear-gradient(135deg, var(--success-color) 0%, #17a085 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .success-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .success-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .success-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
+
+        .success-content {
+            padding: 2rem;
+        }
+
+        .credentials-section, .content-section, .instructions-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%);
+            border: 1px solid rgba(111, 66, 193, 0.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .credentials-section h4, .content-section h4, .instructions-section h4 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(111, 66, 193, 0.2);
+            padding-bottom: 0.5rem;
+        }
+
+        .credential-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease;
+        }
+
+        .credential-item:hover {
+            transform: translateX(5px);
+        }
+
+        .credential-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 1.1rem;
+        }
+
+        .credential-value {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
+            background: rgba(111, 66, 193, 0.1);
+            border-radius: 8px;
+            border: 2px solid rgba(111, 66, 193, 0.2);
+        }
+
+        .content-category {
+            margin-bottom: 2rem;
+        }
+
+        .content-category h5 {
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .content-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+            border: 2px solid rgba(111, 66, 193, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .content-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(111, 66, 193, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .content-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(111, 66, 193, 0.2);
+        }
+
+        .content-card:hover::before {
+            left: 100%;
+        }
+
+        .content-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .content-name {
+            font-weight: 600;
+            color: #495057;
+            font-size: 1.1rem;
+        }
+
+        .instruction-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .instruction-item:hover {
+            transform: translateX(10px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .instruction-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .instruction-text {
+            color: #495057;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .success-actions {
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #f8f9fc 0%, #e9ecef 100%);
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .success-actions .btn {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .success-actions .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .selected-content-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #e3e6f0;
+            border-radius: 8px;
+            padding: 0.5rem;
+            background: #f8f9fc;
+        }
+
+        .selected-content-item {
+            background: white;
+            border: 1px solid #d1ecf1;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            margin: 0.25rem 0;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .selected-content-item .price {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .price-animation {
+            animation: priceUpdate 0.5s ease-in-out;
+        }
+
+        @keyframes priceUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); color: #1cc88a; }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card">
+                    <div class="header text-center">
+                        <h2><i class="fas fa-user-plus me-2"></i>Création de Compte Client</h2>
+                        <p class="mb-0">Génération automatique des identifiants de connexion</p>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Étapes de processus -->
+                        <div class="d-flex justify-content-between mb-4">
+                            <div class="text-center">
+                                <span class="step-number">1</span>
+                                <span>Informations client</span>
+                            </div>
+                            <div class="text-center">
+                                <span class="step-number">2</span>
+                                <span>Sélection des contenus</span>
+                            </div>
+                            <div class="text-center">
+                                <span class="step-number">3</span>
+                                <span>Génération des identifiants</span>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Les identifiants sont générés automatiquement et permettent au client d'accéder aux films et séries achetés.
+                        </div>
+                        
+                        <form id="clientForm" action="/admin/create-client-account">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <h5 class="mb-3"><i class="fas fa-user me-2"></i>Informations de base</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label for="username" class="form-label">Nom d'utilisateur *</label>
+                                        <input type="text" class="form-control" id="username" name="username" required>
+                                        <!-- Après la génération de l'ID client -->
+                                        <input type="hidden" id="client_id_value" name="client_id_value">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="payment_method" class="form-label">Méthode de Paiement</label>
+                                        <select class="form-select" id="payment_method" name="payment_method" required> <!-- Ajoutez 'required' -->
+                                            <option value="">Sélectionner une méthode</option> <!-- Option par défaut vide pour forcer la sélection -->
+                                            <option value="MTN Mobile Money">MTN Mobile Money</option>
+                                            <option value="Orange Money">Orange Money</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h5 class="mb-3"><i class="fas fa-key me-2"></i>Identifiants de connexion</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">ID Client *</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control generated-field" id="client_id" name="client_id" readonly>
+                                            <button type="button" class="btn btn-outline-secondary copy-btn" onclick="copyToClipboard('client_id')">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-primary" onclick="generateClientId()">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">Généré automatiquement</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Mot de passe *</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control generated-field" id="password" name="password" readonly>
+                                            <button type="button" class="btn btn-outline-secondary copy-btn" onclick="copyToClipboard('password')">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-primary" onclick="generatePassword()">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">Généré automatiquement</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <h5 class="mb-3"><i class="fas fa-film me-2"></i>Contenu accessible</h5>
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-primary text-white">
+                                            <i class="fas fa-film me-2"></i> Films disponibles
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Barre de recherche pour films -->
+                                            <div class="search-box">
+                                                <div class="position-relative">
+                                                    <i class="fas fa-search search-icon"></i>
+                                                    <input type="text" class="form-control search-input" id="searchFilms" placeholder="Rechercher un film...">
+                                                </div>
+                                            </div>
+                                            
+                                            <div style="max-height: 300px; overflow-y: auto;" id="filmsContainer">
+                                                {% for film in films %}
+                                                <div class="form-check mb-2 content-item" data-name="{{ film.title.lower() }}">
+                                                    <input class="form-check-input film-checkbox" type="checkbox" name="selected_films" value="{{ film.id }}" id="film{{ film.id }}">
+                                                    <label class="form-check-label d-flex align-items-center" for="film{{ film.id }}">
+                                                        <div class="thumbnail-sm bg-light d-flex align-items-center justify-content-center me-2">
+                                                            {% if film.thumbnail %}
+                                                                <img src="{{ url_for('get_thumbnail', filename=film.thumbnail) }}" class="thumbnail-sm" alt="{{ film.title }}">
+                                                            {% else %}
+                                                                <i class="fas fa-film text-muted"></i>
+                                                            {% endif %}
+                                                        </div>
+                                                        <div>
+                                                            <strong>{{ film.title }}</strong> ({{ film.year }})<br>
+                                                            <small class="text-muted">{{ film.price }} FCFA</small>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                                {% endfor %}
+                                                
+                                                <div id="noResultsFilms" class="no-results" style="display: none;">
+                                                    <i class="fas fa-search me-2"></i>Aucun film trouvé
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-success text-white">
+                                            <i class="fas fa-tv me-2"></i> Séries disponibles
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Barre de recherche pour séries -->
+                                            <div class="search-box">
+                                                <div class="position-relative">
+                                                    <i class="fas fa-search search-icon"></i>
+                                                    <input type="text" class="form-control search-input" id="searchSeries" placeholder="Rechercher une série...">
+                                                </div>
+                                            </div>
+                                            
+                                            <div style="max-height: 300px; overflow-y: auto;" id="seriesContainer">
+                                                {% for series_data in series_list %}
+                                                <div class="mb-3">
+                                                    <h6 class="fw-bold text-primary">{{ series_data.series.title }}</h6>
+                                                    {% for season in series_data.seasons %}
+                                                    <div class="form-check mb-1 ms-3 content-item" data-name="{{ series_data.series.title.lower() }} saison {{ season.season_number }}">
+                                                        <input class="form-check-input series-checkbox" type="checkbox" name="selected_seasons" value="{{ series_data.series.id }}-{{ season.id }}" id="season{{ season.id }}">
+                                                        <label class="form-check-label d-flex align-items-center" for="season{{ season.id }}">
+                                                            <div class="thumbnail-sm bg-light d-flex align-items-center justify-content-center me-2">
+                                                                {% if series_data.series.thumbnail %}
+                                                                    <img src="{{ url_for('get_thumbnail', filename=series_data.series.thumbnail) }}" class="thumbnail-sm" alt="{{ series_data.series.title }}">
+                                                                {% else %}
+                                                                    <i class="fas fa-tv text-muted"></i>
+                                                                {% endif %}
+                                                            </div>
+                                                            <div>
+                                                                <strong>Saison {{ season.season_number }}</strong> ({{ season.year }})<br>
+                                                                <small class="text-muted">{{ season.price }} FCFA</small>
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                                {% endfor %}
+                                                
+                                                <div id="noResultsSeries" class="no-results" style="display: none;">
+                                                    <i class="fas fa-search me-2"></i>Aucune série trouvée
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="credentials-box mb-4">
+                                <h5><i class="fas fa-check-circle me-2 text-success"></i>Identifiants générés</h5>
+                                <p>Le client pourra se connecter avec:</p>
+                                <div class="mb-2">
+                                    <strong>ID Client:</strong> <span id="display-client-id" class="generated-field">CLIENT-A1B2C3D4</span>
+                                </div>
+                                <div>
+                                    <strong>Mot de passe:</strong> <span id="display-password" class="generated-field">X7yZ!2#9</span>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="reset" class="btn btn-secondary me-md-2" onclick="resetForm()">
+                                    <i class="fas fa-undo me-2"></i>Réinitialiser
+                                </button>
+                                <button type="submit" class="btn btn-purple">
+                                    <i class="fas fa-user-plus me-2"></i>Créer le compte client
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-question-circle me-2"></i>Instructions pour le client
+                    </div>
+                    <div class="card-body">
+                        <p>Une fois le compte créé, le client recevra ses identifiants et pourra:</p>
+                        <ol>
+                            <li>Se connecter à l'interface client avec l'ID et le mot de passe générés</li>
+                            <li>Accéder aux films et séries sélectionnés</li>
+                            <li>Télécharger les contenus achetés</li>
+                            <li>Modifier son profil si nécessaire</li>
+                        </ol>
+                        <p class="mb-0"><strong>URL de connexion:</strong> <code>{{ url_for('client_login', _external=True) }}</code></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Fonction pour générer un ID client unique
+        function generateClientId() {
+            const prefix = 'CLIENT';
+            const timestamp = Date.now().toString(36).toUpperCase();
+            const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+            const clientId = `${prefix}-${timestamp}-${random}`;
+            
+            $('#client_id').val(clientId);
+            $('#client_id_value').val(clientId);
+            $('#display-client-id').text(clientId);
+        }
+
+        // Fonction pour générer un mot de passe aléatoire
+        function generatePassword() {
+            const length = 10;
+            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+            let password = "";
+            
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * charset.length);
+                password += charset[randomIndex];
+            }
+            
+            $('#password').val(password);
+            $('#display-password').text(password);
+        }
+
+        // Gérer la soumission du formulaire
+        $('#clientForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('username', $('#username').val());
+            formData.append('client_id', $('#client_id').val()); // IMPORTANT: Ajouter l'ID client
+            formData.append('password', $('#password').val());
+            
+            // Ajouter les films sélectionnés
+            $('.film-checkbox:checked').each(function() {
+                formData.append('selected_films', $(this).val());
+            });
+            
+            // Ajouter les saisons sélectionnées
+            $('.series-checkbox:checked').each(function() {
+                formData.append('selected_seasons', $(this).val());
+            });
+            
+            // Calculer et ajouter le prix total
+            const totalPrice = calculateTotalPrice();
+            formData.append('total_price', totalPrice);
+            
+            if (!$('#username').val().trim()) {
+                alert('Veuillez saisir un nom d\'utilisateur.');
+                return;
+            }
+            
+            if (!$('#client_id').val().trim()) {
+                alert('ID client manquant. Veuillez générer un ID client.');
+                return;
+            }
+            
+            // Récupérer les films et séries sélectionnés pour l'affichage
+            const selectedFilms = [];
+            const selectedSeries = [];
+            
+            $('.film-checkbox:checked').each(function() {
+                const filmName = $(this).closest('label').find('strong').text();
+                selectedFilms.push(filmName);
+            });
+            
+            $('.series-checkbox:checked').each(function() {
+                const serieInfo = $(this).closest('label').find('strong').text();
+                const serieName = $(this).closest('.mb-3').find('h6').text();
+                selectedSeries.push(`${serieName} - ${serieInfo}`);
+            });
+            
+            // Envoyer les données
+            $.ajax({
+                url: '/admin/create-client-account',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        showSuccessWithRedirect(
+                            $('#username').val(), 
+                            $('#client_id').val(), 
+                            $('#password').val(), 
+                            selectedFilms, 
+                            selectedSeries,
+                            totalPrice
+                        );
+                    } else {
+                        alert('Erreur: ' + response.message);
+                    }
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON;
+                    if (response && response.message) {
+                        alert('Erreur: ' + response.message);
+                    } else {
+                        alert('Une erreur est survenue lors de la création du compte.');
+                    }
+                }
+            });
+        });
+        
+        // Fonction pour copier le texte dans le presse-papier
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            element.select();
+            element.setSelectionRange(0, 99999); // Pour les appareils mobiles
+            document.execCommand("copy");
+            
+            // Afficher une notification
+            const btn = $(`button[onclick="copyToClipboard('${elementId}')"]`);
+            const originalHtml = btn.html();
+            btn.html('<i class="fas fa-check"></i>');
+            btn.removeClass('btn-outline-secondary').addClass('btn-success');
+            
+            setTimeout(() => {
+                btn.html(originalHtml);
+                btn.removeClass('btn-success').addClass('btn-outline-secondary');
+            }, 2000);
+        }
+        
+        // Fonction de recherche
+        function searchContent(searchInput, container, noResultsId) {
+            const searchTerm = searchInput.toLowerCase();
+            const items = container.find('.content-item');
+            let visibleCount = 0;
+            
+            items.each(function() {
+                const itemName = $(this).data('name').toLowerCase();
+                if (itemName.includes(searchTerm)) {
+                    $(this).removeClass('hidden');
+                    visibleCount++;
+                } else {
+                    $(this).addClass('hidden');
+                }
+            });
+            
+            // Afficher/masquer le message "aucun résultat"
+            if (visibleCount === 0 && searchTerm !== '') {
+                $('#' + noResultsId).show();
+            } else {
+                $('#' + noResultsId).hide();
+            }
+        }
+        
+        // Fonction pour réinitialiser le formulaire
+        function resetForm() {
+            generateClientId();
+            generatePassword();
+            $('.film-checkbox, .series-checkbox').prop('checked', false);
+            $('#searchFilms, #searchSeries').val('');
+            $('.content-item').removeClass('hidden');
+            $('#noResultsFilms, #noResultsSeries').hide();
+            $('#username').val('');
+        }
+        
+        // Fonction pour copier toutes les informations
+        function copyAllCredentials(username, clientId, password) {
+            const text = `Informations de connexion:\n\nNom d'utilisateur: ${username}\nID Client: ${clientId}\nMot de passe: ${password}\n\nURL de connexion: {{ url_for('client_login', _external=True) }}`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // Animation de confirmation
+                const btn = $('button[onclick*="copyAllCredentials"]');
+                const originalHtml = btn.html();
+                btn.html('<i class="fas fa-check me-2"></i>Copié!');
+                btn.removeClass('btn-success').addClass('btn-dark');
+                
+                setTimeout(() => {
+                    btn.html(originalHtml);
+                    btn.removeClass('btn-dark').addClass('btn-success');
+                }, 2000);
+            }).catch(() => {
+                alert('Erreur lors de la copie. Veuillez copier manuellement.');
+            });
+        }
+        
+        // Fonction pour fermer la page de succès
+        function closeSuccessPage() {
+            $('.success-overlay').removeClass('show');
+            setTimeout(() => {
+                $('.success-overlay').remove();
+                resetForm();
+            }, 300);
+        }
+
+        // Fonction pour calculer le prix total automatiquement
+        function calculateTotalPrice() {
+            let totalPrice = 0;
+            
+            // Calculer le prix des films sélectionnés
+            $('.film-checkbox:checked').each(function() {
+                const priceText = $(this).closest('.form-check').find('small:contains("FCFA")').text();
+                const price = parseFloat(priceText.match(/\d+/)?.[0] || 0);
+                totalPrice += price;
+            });
+            
+            // Calculer le prix des saisons sélectionnées
+            $('.series-checkbox:checked').each(function() {
+                const priceText = $(this).closest('.form-check').find('small:contains("FCFA")').text();
+                const price = parseFloat(priceText.match(/\d+/)?.[0] || 0);
+                totalPrice += price;
+            });
+            
+            // Mettre à jour l'affichage du prix total
+            $('#totalPrice').text(totalPrice.toLocaleString() + ' FCFA');
+            
+            return totalPrice;
+        }
+
+        // Fonction pour afficher le résumé avec redirection
+        function showSuccessWithRedirect(username, clientId, password, selectedFilms, selectedSeries, totalPrice) {
+            const successHTML = `
+                <div class="success-overlay">
+                    <div class="success-container">
+                        <div class="success-header">
+                            <div class="success-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h2 class="success-title">Compte Client Créé avec Succès!</h2>
+                            <p class="success-subtitle">Les identifiants ont été générés et le compte est maintenant actif</p>
+                        </div>
+                        
+                        <div class="success-content">
+                            <div class="credentials-section">
+                                <h4><i class="fas fa-key me-2"></i>Informations de connexion</h4>
+                                <div class="credential-item">
+                                    <div class="credential-label">Nom d'utilisateur</div>
+                                    <div class="credential-value">${username}</div>
+                                </div>
+                                <div class="credential-item">
+                                    <div class="credential-label">ID Client</div>
+                                    <div class="credential-value">${clientId}</div>
+                                </div>
+                                <div class="credential-item">
+                                    <div class="credential-label">Mot de passe</div>
+                                    <div class="credential-value">${password}</div>
+                                </div>
+                                <div class="credential-item" style="background: linear-gradient(135deg, #1cc88a, #17a085); color: white;">
+                                    <div class="credential-label">Prix Total</div>
+                                    <div class="credential-value" style="background: rgba(255,255,255,0.2); color: white;">
+                                        ${totalPrice.toLocaleString()} FCFA
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${selectedFilms.length > 0 || selectedSeries.length > 0 ? `
+                            <div class="content-section">
+                                <h4><i class="fas fa-play-circle me-2"></i>Contenu accessible</h4>
+                                ${selectedFilms.length > 0 ? `
+                                <div class="content-category">
+                                    <h5><i class="fas fa-film me-2"></i>Films (${selectedFilms.length})</h5>
+                                    <div class="content-grid">
+                                        ${selectedFilms.map(film => `
+                                            <div class="content-card">
+                                                <div class="content-icon">
+                                                    <i class="fas fa-film"></i>
+                                                </div>
+                                                <div class="content-name">${film}</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                ${selectedSeries.length > 0 ? `
+                                <div class="content-category">
+                                    <h5><i class="fas fa-tv me-2"></i>Séries (${selectedSeries.length})</h5>
+                                    <div class="content-grid">
+                                        ${selectedSeries.map(serie => `
+                                            <div class="content-card">
+                                                <div class="content-icon">
+                                                    <i class="fas fa-tv"></i>
+                                                </div>
+                                                <div class="content-name">${serie}</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                            ` : ''}
+                            
+                            <div class="instructions-section">
+                                <h4><i class="fas fa-info-circle me-2"></i>Prochaines étapes</h4>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">1</div>
+                                    <div class="instruction-text">Le compte client a été créé avec succès</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">2</div>
+                                    <div class="instruction-text">Redirection automatique vers la page de connexion client</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">3</div>
+                                    <div class="instruction-text">Les identifiants seront pré-remplis automatiquement</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="success-actions">
+                            <button class="btn btn-success btn-lg me-3" onclick="copyAllCredentials('${username}', '${clientId}', '${password}')">
+                                <i class="fas fa-copy me-2"></i>Copier les informations
+                            </button>
+                            <button class="btn btn-primary btn-lg" onclick="redirectToClientLogin('${clientId}', '${password}')">
+                                <i class="fas fa-sign-in-alt me-2"></i>Aller à la connexion client
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('body').append(successHTML);
+            
+            // Animation d'entrée
+            setTimeout(() => {
+                $('.success-overlay').addClass('show');
+            }, 100);
+            
+            // Redirection automatique après 5 secondes
+            setTimeout(() => {
+                redirectToClientLogin(clientId, password);
+            }, 5000);
+        }
+
+        // Fonction pour rediriger vers la page de connexion client avec pré-remplissage
+        function redirectToClientLogin(clientId, password) {
+            // Stocker les identifiants temporairement
+            sessionStorage.setItem('tempClientId', clientId);
+            sessionStorage.setItem('tempPassword', password);
+            sessionStorage.setItem('tempClientId', clientId);
+            sessionStorage.setItem('tempPassword', password);
+            
+            // Rediriger vers la page de connexion client
+            window.location.href = '/client/login';
+        }
+        
+        // Initialiser la génération des identifiants au chargement
+        $(document).ready(function() {
+            generateClientId();
+            generatePassword();
+            
+            // Configurer la recherche pour les films
+            $('#searchFilms').on('input', function() {
+                searchContent($(this).val(), $('#filmsContainer'), 'noResultsFilms');
+            });
+            
+            // Configurer la recherche pour les séries
+            $('#searchSeries').on('input', function() {
+                searchContent($(this).val(), $('#seriesContainer'), 'noResultsSeries');
+            });
+            
+            // Ajouter les événements de calcul du prix total
+            $(document).on('change', '.film-checkbox, .series-checkbox', function() {
+                calculateTotalPrice();
+            });
+            
+            // Calculer le prix initial
+            calculateTotalPrice();
+            
+            // Gérer la soumission du formulaire
+            $('#clientForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData();
+                formData.append('username', $('#username').val());
+                formData.append('password', $('#password').val());
+                
+                // Ajouter les films sélectionnés
+                $('.film-checkbox:checked').each(function() {
+                    formData.append('selected_films', $(this).val());
+                });
+                
+                // Ajouter les saisons sélectionnées
+                $('.series-checkbox:checked').each(function() {
+                    formData.append('selected_seasons', $(this).val());
+                });
+                
+                // Calculer et ajouter le prix total
+                const totalPrice = calculateTotalPrice();
+                formData.append('total_price', totalPrice);
+                
+                if (!$('#username').val().trim()) {
+                    alert('Veuillez saisir un nom d\'utilisateur.');
+                    return;
+                }
+                
+                // Récupérer les films et séries sélectionnés pour l'affichage
+                const selectedFilms = [];
+                const selectedSeries = [];
+                
+                $('.film-checkbox:checked').each(function() {
+                    const filmName = $(this).closest('label').find('strong').text();
+                    selectedFilms.push(filmName);
+                });
+                
+                $('.series-checkbox:checked').each(function() {
+                    const serieInfo = $(this).closest('label').find('strong').text();
+                    const serieName = $(this).closest('.mb-3').find('h6').text();
+                    selectedSeries.push(`${serieName} - ${serieInfo}`);
+                });
+                
+                // Envoyer les données
+                $.ajax({
+                    url: '/admin/create-client-account',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if (response.success) {
+                            showSuccessWithRedirect(
+                                $('#username').val(), 
+                                $('#client_id').val(), 
+                                $('#password').val(), 
+                                selectedFilms, 
+                                selectedSeries,
+                                totalPrice
+                            );
+                        } else {
+                            alert('Erreur: ' + response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        const response = xhr.responseJSON;
+                        if (response && response.message) {
+                            alert('Erreur: ' + response.message);
+                        } else {
+                            alert('Une erreur est survenue lors de la création du compte.');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

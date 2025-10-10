@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Transactions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .stats-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .filter-badge {
+            cursor: pointer;
+        }
+        .transaction-row {
+            transition: background-color 0.2s;
+        }
+        .transaction-row:hover {
+            background-color: #f8f9fa;
+        }
+        .status-badge {
+            font-size: 0.85em;
+        }
+        .content-details {
+            max-width: 300px;
+        }
+        .content-item {
+            font-size: 0.85em;
+            padding: 2px 4px;
+            margin: 1px 0;
+            background: #f8f9fa;
+            border-radius: 3px;
+            border-left: 3px solid #6f42c1;
+        }
+        .admin-creation-badge {
+            background: linear-gradient(135deg, #1cc88a, #17a085);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        .price-highlight {
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+            color: #2d3436;
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 text-gray-800">Gestion des Transactions</h1>
+            <div class="btn-group">
+                <a href="{{ url_for('admin_transactions', status='all') }}" 
+                   class="btn btn-outline-primary filter-badge {{ 'active' if status_filter == 'all' }}">
+                   Toutes <span class="badge bg-secondary">{{ total_transactions }}</span>
+                </a>
+                <a href="{{ url_for('admin_transactions', status='pending') }}" 
+                   class="btn btn-outline-warning filter-badge {{ 'active' if status_filter == 'pending' }}">
+                   En attente <span class="badge bg-secondary">{{ pending_transactions }}</span>
+                </a>
+                <a href="{{ url_for('admin_transactions', status='confirmed') }}" 
+                   class="btn btn-outline-success filter-badge {{ 'active' if status_filter == 'confirmed' }}">
+                   Confirmées <span class="badge bg-secondary">{{ confirmed_transactions }}</span>
+                </a>
+                <a href="{{ url_for('admin_transactions', status='rejected') }}" 
+                   class="btn btn-outline-danger filter-badge {{ 'active' if status_filter == 'rejected' }}">
+                   Rejetées <span class="badge bg-secondary">{{ rejected_transactions }}</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Cartes de statistiques -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2 stats-card">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Revenus Total</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "{:,.0f}".format(total_revenue) }} FCFA</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2 stats-card">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Créations Admin</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "{:,.0f}".format(admin_created_revenue) }} FCFA</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-user-plus fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2 stats-card">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Transactions</div>
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col-auto">
+                                        <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ confirmed_transactions }}</div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="progress progress-sm mr-2">
+                                            <div class="progress-bar bg-info" role="progressbar"
+                                                 style="width: {{ (confirmed_transactions / total_transactions * 100) if total_transactions > 0 else 0 }}%"
+                                                 aria-valuenow="{{ confirmed_transactions }}" aria-valuemin="0"
+                                                 aria-valuemax="{{ total_transactions }}"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2 stats-card">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    En Attente</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_transactions }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Liste des Transactions</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Client</th>
+                                <th>Contenu</th>
+                                <th>Détails</th>
+                                <th>Montant</th>
+                                <th>Méthode</th>
+                                <th>Statut</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr class="transaction-row">
+                                <td><strong>#{{ transaction.id }}</strong></td>
+                                <td>
+                                    <div><strong>{{ transaction.client.username }}</strong></div>
+                                    <small class="text-muted">
+                                        {% if transaction.client.telegram_id != 'N/A' %}
+                                            <i class="fab fa-telegram me-1"></i>{{ transaction.client.telegram_id }}
+                                        {% endif %}
+                                        {% if transaction.client.email != 'N/A' %}
+                                            <br><i class="fas fa-envelope me-1"></i>{{ transaction.client.email }}
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if transaction.product.type == 'compte_admin' %}
+                                        <span class="admin-creation-badge">
+                                            <i class="fas fa-user-cog me-1"></i>Création Admin
+                                        </span>
+                                    {% else %}
+                                        <strong>{{ transaction.product.title }}</strong>
+                                    {% endif %}
+                                    <div class="text-muted small">
+                                        {{ transaction.product.type|capitalize }} 
+                                        {% if transaction.product.year %}({{ transaction.product.year }}){% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="content-details">
+                                        {% if transaction.content_details %}
+                                            {% for detail in transaction.content_details %}
+                                                <div class="content-item">{{ detail }}</div>
+                                            {% endfor %}
+                                        {% endif %}
+                                        {% if transaction.description %}
+                                            <small class="text-muted mt-2 d-block">{{ transaction.description }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="price-highlight">{{ "{:,.0f}".format(transaction.amount) }} FCFA</span>
+                                </td>
+                                <td>
+                                    {% if transaction.payment_method == 'mtn_mobile' %}
+                                        <span class="badge bg-warning text-dark"><i class="fas fa-mobile-alt me-1"></i>MTN Mobile</span>
+                                    {% elif transaction.payment_method == 'orange_money' %}
+                                        <span class="badge bg-warning text-dark"><i class="fas fa-mobile-alt me-1"></i>Orange Money</span>
+                                    {% elif transaction.payment_method == 'admin_creation' %}
+                                        <span class="badge bg-info"><i class="fas fa-user-shield me-1"></i>Création Admin</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ transaction.payment_method }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transaction.status == 'pending' %}
+                                        <span class="badge bg-warning status-badge"><i class="fas fa-clock me-1"></i>En attente</span>
+                                    {% elif transaction.status == 'confirmed' %}
+                                        <span class="badge bg-success status-badge"><i class="fas fa-check me-1"></i>Confirmée</span>
+                                        {% if transaction.confirmed_by %}
+                                        <div class="text-muted small">
+                                            par {{ transaction.confirmed_by.username }}
+                                        </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-danger status-badge"><i class="fas fa-times me-1"></i>Rejetée</span>
+                                        {% if transaction.confirmed_by %}
+                                        <div class="text-muted small">
+                                            par {{ transaction.confirmed_by.username }}
+                                        </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div>{{ transaction.transaction_date }}</div>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        {% if transaction.status == 'pending' %}
+                                            <a href="{{ url_for('confirm_transaction', transaction_id=transaction.id) }}" 
+                                               class="btn btn-sm btn-success" title="Confirmer">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            <a href="{{ url_for('reject_transaction', transaction_id=transaction.id) }}" 
+                                               class="btn btn-sm btn-danger" title="Rejeter">
+                                                <i class="fas fa-times"></i>
+                                            </a>
+                                        {% endif %}
+                                        
+                                        {% if transaction.payment_screenshot %}
+                                            <button class="btn btn-sm btn-info" title="Voir capture" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#screenshotModal"
+                                                    data-image="{{ url_for('get_screenshot', filename=transaction.payment_screenshot) }}">
+                                                <i class="fas fa-image"></i>
+                                            </button>
+                                        {% endif %}
+                                        
+                                        <button class="btn btn-sm btn-secondary" title="Détails"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#detailsModal"
+                                                data-transaction-id="{{ transaction.id }}"
+                                                data-transaction-data="{{ transaction | tojson }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-receipt fa-3x mb-3"></i>
+                                        <p>Aucune transaction trouvée</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour afficher les captures d'écran -->
+    <div class="modal fade" id="screenshotModal" tabindex="-1" aria-labelledby="screenshotModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="screenshotModalLabel">Capture de paiement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="screenshotImage" src="" alt="Capture de paiement" class="img-fluid">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour afficher les détails de transaction -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="detailsModalLabel">
+                        <i class="fas fa-info-circle me-2"></i>Détails de la Transaction
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="transactionDetails">
+                    <!-- Le contenu sera généré dynamiquement par JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Script pour afficher les captures d'écran dans la modal
+            $('#screenshotModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var imageUrl = button.data('image');
+                var modal = $(this);
+                modal.find('#screenshotImage').attr('src', imageUrl);
+            });
+
+            // Script pour afficher les détails de transaction
+            $('#detailsModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var transactionData = button.data('transaction-data');
+                var modal = $(this);
+                
+                if (transactionData) {
+                    var transaction = typeof transactionData === 'string' ? JSON.parse(transactionData) : transactionData;
+                    
+                    var detailsHtml = generateTransactionDetailsHtml(transaction);
+                    modal.find('#transactionDetails').html(detailsHtml);
+                }
+            });
+        });
+
+        function generateTransactionDetailsHtml(transaction) {
+            var statusClass = '';
+            var statusIcon = '';
+            var statusText = '';
+            
+            switch(transaction.status) {
+                case 'pending':
+                    statusClass = 'warning';
+                    statusIcon = 'clock';
+                    statusText = 'En attente';
+                    break;
+                case 'confirmed':
+                    statusClass = 'success';
+                    statusIcon = 'check-circle';
+                    statusText = 'Confirmée';
+                    break;
+                case 'rejected':
+                    statusClass = 'danger';
+                    statusIcon = 'times-circle';
+                    statusText = 'Rejetée';
+                    break;
+            }
+
+            var paymentMethodText = '';
+            var paymentIcon = '';
+            
+            switch(transaction.payment_method) {
+                case 'mtn_mobile':
+                    paymentMethodText = 'MTN Mobile Money';
+                    paymentIcon = 'mobile-alt';
+                    break;
+                case 'orange_money':
+                    paymentMethodText = 'Orange Money';
+                    paymentIcon = 'mobile-alt';
+                    break;
+                case 'admin_creation':
+                    paymentMethodText = 'Création par Administrateur';
+                    paymentIcon = 'user-shield';
+                    break;
+                default:
+                    paymentMethodText = transaction.payment_method;
+                    paymentIcon = 'credit-card';
+            }
+
+            var html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-user me-2"></i>Informations Client</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Nom d'utilisateur:</strong> ${transaction.client.username}</p>
+                                <p><strong>Email:</strong> ${transaction.client.email}</p>
+                                <p><strong>Telegram ID:</strong> ${transaction.client.telegram_id}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Détails Transaction</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>ID Transaction:</strong> #${transaction.id}</p>
+                                <p><strong>Date:</strong> ${transaction.transaction_date}</p>
+                                <p><strong>Montant:</strong> <span class="price-highlight">${new Intl.NumberFormat().format(transaction.amount)} FCFA</span></p>
+                                <p><strong>Méthode:</strong> <i class="fas fa-${paymentIcon} me-1"></i>${paymentMethodText}</p>
+                                <p><strong>Statut:</strong> <span class="badge bg-${statusClass}"><i class="fas fa-${statusIcon} me-1"></i>${statusText}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-play-circle me-2"></i>Contenu Acheté</h6>
+                    </div>
+                    <div class="card-body">
+                        <h6>${transaction.product.title}</h6>
+                        <div class="content-details-modal">
+            `;
+            
+            if (transaction.content_details && transaction.content_details.length > 0) {
+                transaction.content_details.forEach(function(detail) {
+                    html += `<div class="content-item mb-2">${detail}</div>`;
+                });
+            }
+            
+            html += `
+                        </div>
+                        ${transaction.description ? `<p class="mt-3 mb-0"><strong>Description:</strong> ${transaction.description}</p>` : ''}
+                    </div>
+                </div>
+            `;
+            
+            if (transaction.confirmed_by) {
+                html += `
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-user-check me-2"></i>Traitement</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Traité par:</strong> ${transaction.confirmed_by.username}</p>
+                            <p><strong>Date de traitement:</strong> ${transaction.confirmed_by.date}</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
+    </script>
+
+    <style>
+        .content-details-modal .content-item {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-left: 4px solid #6f42c1;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .price-highlight {
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+            color: #2d3436;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+    </style>
+</body>
+</html>

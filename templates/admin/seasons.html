@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Saisons - Système Films & Séries</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .badge-episode {
+            font-size: 0.75em;
+        }
+        .season-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .season-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .series-header {
+            background: linear-gradient(135deg, #1cc88a 0%, #17a673 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        .episode-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .modal-xl {
+            max-width: 900px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- En-tête de la série -->
+        <div class="card series-header shadow mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="h3 text-white">{{ series.title }}</h1>
+                        <p class="text-white mb-0">{{ series.description }}</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        {% if series.thumbnail %}
+                            <img src="{{ url_for('get_thumbnail', filename=series.thumbnail) }}" 
+                                 alt="{{ series.title }}" class="img-fluid rounded" style="max-height: 100px;">
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h2 class="h4 text-gray-800">Gestion des Saisons</h2>
+            <div>
+                <a href="{{ url_for('add_season', series_id=series.id) }}" class="btn btn-primary me-2">
+                    <i class="fas fa-plus me-2"></i>Ajouter une Saison
+                </a>
+                <a href="{{ url_for('admin_series') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Retour aux séries
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Liste des Saisons</h6>
+                <span class="badge bg-primary">{{ seasons|length }} saison(s)</span>
+            </div>
+            <div class="card-body">
+                <!-- Messages Flash -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                {% if seasons %}
+                    <div class="row">
+                        {% for season in seasons %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card season-card h-100">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="m-0 font-weight-bold">Saison {{ season.season_number }}</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <span class="badge bg-info">Année: {{ season.year }}</span>
+                                        <span class="badge bg-warning text-dark ms-1">{{ season.price }} FCFA</span>
+                                    </div>
+                                    
+                                    {% if season.description %}
+                                        <p class="card-text">{{ season.description }}</p>
+                                    {% else %}
+                                        <p class="card-text text-muted">Aucune description</p>
+                                    {% endif %}
+                                    
+                                    <div class="mb-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-list me-1"></i>{{ season.episodes|length }} épisode(s)
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="btn-group w-100">
+                                        <button class="btn btn-sm btn-outline-primary view-episodes" 
+                                                data-season-id="{{ season.id }}" 
+                                                data-season-number="{{ season.season_number }}">
+                                            <i class="fas fa-list me-1"></i>Épisodes
+                                        </button>
+                                        <a href="{{ url_for('edit_season', season_id=season.id) }}" 
+                                           class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger delete-season" 
+                                                data-season-id="{{ season.id }}" 
+                                                data-season-number="{{ season.season_number }}"
+                                                data-series-id="{{ series.id }}"
+                                                data-series-title="{{ series.title }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-footer text-muted">
+                                    <small>ID Telegram: {{ season.telegram_file_id }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-list-alt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Aucune saison trouvée</h5>
+                        <p class="text-muted">Cette série n'a pas encore de saisons.</p>
+                        <a href="{{ url_for('add_season', series_id=series.id) }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Ajouter la première saison
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Statistiques des épisodes -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Statistiques des Épisodes</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Saison</th>
+                                        <th>Nombre d'épisodes</th>
+                                        <th>Prix</th>
+                                        <th>Année</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for season in seasons %}
+                                    <tr>
+                                        <td>Saison {{ season.season_number }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ season.episodes|length }}</span>
+                                        </td>
+                                        <td>{{ season.price }} FCFA</td>
+                                        <td>{{ season.year }}</td>
+                                        <td>
+                                            <span class="badge bg-success">Active</span>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">
+                                            Aucune statistique disponible
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour afficher les épisodes -->
+    <div class="modal fade" id="episodesModal" tabindex="-1" aria-labelledby="episodesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="episodesModalLabel">Épisodes de la Saison <span id="season-number"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6>Liste des épisodes</h6>
+                        <button class="btn btn-sm btn-success" id="add-episode-btn">
+                            <i class="fas fa-plus me-1"></i>Ajouter un épisode
+                        </button>
+                    </div>
+                    
+                    <div class="episode-list mb-4" id="episodes-container">
+                        <!-- Les épisodes seront chargés ici dynamiquement -->
+                    </div>
+                    
+                    <div id="no-episodes" class="text-center py-4 d-none">
+                        <i class="fas fa-film fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">Aucun épisode pour cette saison</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmation de suppression -->
+    <div class="modal fade" id="deleteSeasonModal" tabindex="-1" aria-labelledby="deleteSeasonModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteSeasonModalLabel">Confirmation de suppression</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Êtes-vous sûr de vouloir supprimer la saison <span id="season-to-delete"></span> ?</p>
+                    <p class="text-danger">Cette action supprimera également tous les épisodes associés et est irréversible.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete-season">Supprimer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmation de suppression d'épisode -->
+    <div class="modal fade" id="deleteEpisodeModal" tabindex="-1" aria-labelledby="deleteEpisodeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteEpisodeModalLabel">Confirmation de suppression</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Êtes-vous sûr de vouloir supprimer l'épisode <span id="episode-to-delete"></span> ?</p>
+                    <p class="text-danger">Cette action est irréversible.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete-episode">Supprimer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            let currentSeasonId = null;
+            let currentEpisodeId = null;
+            const episodesModal = new bootstrap.Modal(document.getElementById('episodesModal'));
+            const deleteSeasonModal = new bootstrap.Modal(document.getElementById('deleteSeasonModal'));
+            const deleteEpisodeModal = new bootstrap.Modal(document.getElementById('deleteEpisodeModal'));
+            
+            // Ouvrir le modal des épisodes
+            $('.view-episodes').on('click', function() {
+                const seasonId = $(this).data('season-id');
+                const seasonNumber = $(this).data('season-number');
+                
+                currentSeasonId = seasonId;
+                $('#season-number').text(seasonNumber);
+                loadEpisodes(seasonId);
+                episodesModal.show();
+            });
+            
+            // Bouton pour ajouter un épisode
+            $('#add-episode-btn').on('click', function() {
+                window.location.href = `/admin/add_episode?season_id=${currentSeasonId}`;
+            });
+            
+            // Confirmation de suppression de saison
+            $('.delete-season').on('click', function() {
+                const seasonId = $(this).data('season-id');
+                const seasonNumber = $(this).data('season-number');
+                const seriesId = $(this).data('series-id');
+                const seriesTitle = $(this).data('series-title');
+                
+                if (confirm(`Êtes-vous sûr de vouloir supprimer la Saison ${seasonNumber} de la série "${seriesTitle}" ?\n\nCette action supprimera également tous les épisodes associés et est irréversible.`)) {
+                    window.location.href = `/admin/seasons/delete/${seasonId}`;
+                }
+            });
+            
+            // Confirmer la suppression de saison
+            $('#confirm-delete-season').on('click', function() {
+                window.location.href = `/admin/seasons/delete/${currentSeasonId}`;
+            });
+            
+            // Charger les épisodes d'une saison
+            function loadEpisodes(seasonId) {
+                $.ajax({
+                    url: `/admin/get_episodes/${seasonId}`,
+                    method: 'GET',
+                    success: function(response) {
+                        const episodesContainer = $('#episodes-container');
+                        const noEpisodes = $('#no-episodes');
+                        
+                        episodesContainer.empty();
+                        
+                        if (response.episodes && response.episodes.length > 0) {
+                            noEpisodes.addClass('d-none');
+                            
+                            response.episodes.forEach(episode => {
+                                const episodeCard = `
+                                    <div class="card mb-2">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-0">Épisode ${episode.episode_number}</h6>
+                                                    <small class="text-muted">${episode.title || 'Sans titre'}</small>
+                                                </div>
+                                                <div class="btn-group">
+                                                    <a href="/admin/edit_episode/${episode.id}" class="btn btn-sm btn-outline-warning">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button class="btn btn-sm btn-outline-danger delete-episode" 
+                                                            data-episode-id="${episode.id}" 
+                                                            data-episode-number="${episode.episode_number}">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                episodesContainer.append(episodeCard);
+                            });
+                            
+                            // Gérer la suppression d'épisode
+                            $('.delete-episode').on('click', function() {
+                                const episodeId = $(this).data('episode-id');
+                                const episodeNumber = $(this).data('episode-number');
+                                
+                                currentEpisodeId = episodeId;
+                                $('#episode-to-delete').text(`Épisode ${episodeNumber}`);
+                                deleteEpisodeModal.show();
+                            });
+                        } else {
+                            noEpisodes.removeClass('d-none');
+                        }
+                    },
+                    error: function() {
+                        $('#episodes-container').empty();
+                        $('#no-episodes').removeClass('d-none');
+                    }
+                });
+            }
+            
+            // Confirmer la suppression d'épisode
+            $('#confirm-delete-episode').on('click', function() {
+                window.location.href = `/admin/delete_episode/${currentEpisodeId}`;
+                deleteEpisodeModal.hide();
+            });
+
+            // Gestion des messages flash
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

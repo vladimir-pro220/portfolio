@@ -1,0 +1,78 @@
+{
+    "films": [
+        {
+            "id": 1,
+            "title": "le jeu de la dame ",
+            "year": 2019,
+            "description": "venez decouvrir les strategies les plus mortelles du jeu des echecs",
+            "price": 200.0,
+            "genre": "action",
+            "duration": null
+        },
+        {
+            "id": 2,
+            "title": "Avenger End Game",
+            "year": 2022,
+            "description": "apres la disparution de la mortier des des habitants de l'univers, le reste des super heros unissent leurs forces et rendre dans le temps pour eleminer thanos. mais ce sera au prix de la vie de plusieurs d'entre eux. si vous etes curieux de savoir quel sera la suite, venez decouvrir ce films",
+            "price": 500.0,
+            "genre": "action",
+            "duration": null
+        }
+    ],
+    "series": [
+        {
+            "id": 1,
+            "title": "Squit Game",
+            "description": "des personne ayant perdus toute dignite finenciere viennent se font avoir par une promesse de richesse et viennent participer a un ensemble de jeux dans laquelle chaque defaite cause ta mort. la pression et le stress est a son maximium",
+            "seasons": [
+                {
+                    "id": 2,
+                    "season_number": 2,
+                    "year": 2024,
+                    "description": "les VIP sont arriver pour voir les jeux en direct et faire des paris sur les joueurs. l'on prend conscience de tout la mafia qui se cache derriere ce jeux ainsi que les raison qui l'on pousser a le creer. si vous voulez savoir qui est le grand gagnant du jeux qui a remporter une somme de 456milliard venez voir la saison deux de Squit Game",
+                    "price": 300.0,
+                    "episodes": [
+                        {
+                            "id": 2,
+                            "episode_number": 1,
+                            "title": "un, deux, trois soleil",
+                            "chemin": "a1959a2e-d168-427b-bcc7-e4fc480caa5b_We_are_not_human___Frankenstein-Dracula_variation_720p.mp4",
+                            "duration": null
+                        }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "season_number": 3,
+                    "year": 2025,
+                    "description": "es VIP sont arriver pour voir les jeux en direct et faire des paris sur les joueurs. l'on prend conscience de tout la mafia qui se cache derriere ce jeux ainsi que les raison qui l'on pousser a le creer. si vous voulez savoir qui est le grand gagnant du jeux qui a remporter une somme de 456milliard venez voir la saison deux de Squit Game",
+                    "price": 150.0,
+                    "episodes": [
+                        {
+                            "id": 1,
+                            "episode_number": 1,
+                            "title": "Gagner Contre Louverture Ecossaise Avec Les Noirs  360P 1738915894322",
+                            "chemin": "206ae5b3-8245-49be-9e81-bf45e2e7db08_Gagner_contre_lOuverture_Ecossaise_avec_les_noirs__360p_1738915894322.mp4",
+                            "duration": null
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "title": "Dragon Ball Super",
+            "description": "venez decouvrir la suite de dbz avec des adversaires les plus coriaces les uns que les autres",
+            "seasons": [
+                {
+                    "id": 4,
+                    "season_number": 1,
+                    "year": 2021,
+                    "description": "Goku va t'il vaincre le dieu millenaire? venez decouvrir la reponse dans l'un des combat les plus epique de tous les temps",
+                    "price": 2000.0,
+                    "episodes": []
+                }
+            ]
+        }
+    ]
+}

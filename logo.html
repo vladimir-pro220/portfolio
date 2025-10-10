@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logo CineBot</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #fcfbfb;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            }
+        
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(5, 5, 5, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .logo {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .film-reel {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: #080c0f;
+            border-radius: 50%;
+            box-shadow: 0 0 0 10px #fdfcfc, 
+                        0 0 0 12px #231fe2, 
+                        0 0 0 22px #fcfbfb;
+            display: flex;
+            justify-content: center;
+             align-items: center;
+        }
+        
+        .hole {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #1a252f;
+            border-radius: 50%;
+        }
+        
+        .hole:nth-child(1) { top: 20px; left: 50px; }
+        .hole:nth-child(2) { top: 50px; left: 20px; }
+        .hole:nth-child(3) { top: 50px; right: 20px; }
+        .hole:nth-child(4) { top: 80px; left: 50px; }
+        .robot-face {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: #3498db;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.7);
+        }
+        
+        .eye {
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            margin: 5px;
+        }
+        
+        .eyes {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+        
+        .mouth {
+            width: 25px;
+            height: 5px;
+            background: white;
+            margin-top: 8px;
+            border-radius: 2px;
+             }
+        
+        .antenna {
+            position: absolute;
+            width: 5px;
+            height: 10px;
+            background: #3498db;
+            top: -15px;
+            border-radius: 2px 2px 0 0;
+        }
+        
+        .antenna::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #fffefd;
+            border-radius: 50%;
+            top: -6px;
+            left: -1.5px;
+        }
+        
+        .app-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: rgb(26, 11, 240);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            letter-spacing: 1px;
+        }
+        
+        .tagline {
+            font-size: 14px;
+            color: rgba(26, 11, 240);
+            margin-top: 5px;
+            }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <div class="logo">
+            <div class="film-reel">
+                <div class="hole"></div>
+                <div class="hole"></div>
+                <div class="hole"></div>
+                <div class="hole"></div>
+            </div>
+            <div class="robot-face">
+                <div class="antenna"></div>
+                <div class="eyes">
+                    <div class="eye"></div>
+                    <div class="eye"></div>
+                </div>
+                <div class="mouth"></div>
+            </div>
+        </div>
+        <div class="app-name">CINEBOT</div>
+        <div class="tagline">Conversation. Achat. Divertissement.</div>
+    </div>
+</body>
+</html>

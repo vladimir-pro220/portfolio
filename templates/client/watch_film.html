@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ film.title }} - Visionnage</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6f42c1;
+            --secondary-color: #59359a;
+            --dark-bg: #1a1a1a;
+            --player-bg: #000000;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
+            color: white;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .player-container {
+            background: var(--player-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            margin-bottom: 2rem;
+        }
+
+        .custom-video-player {
+            width: 100%;
+            height: auto;
+            max-height: 70vh;
+            background: #000;
+        }
+
+        .film-info {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .film-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .film-meta {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(111, 66, 193, 0.3);
+            color: white;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #1cc88a 0%, #17a085 100%);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(28, 200, 138, 0.3);
+            color: white;
+        }
+
+        .controls-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            padding: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .player-container:hover .controls-overlay {
+            opacity: 1;
+        }
+
+        .navbar {
+            background: rgba(0,0,0,0.9) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+        }
+
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--primary-color);
+            font-size: 3rem;
+        }
+
+        .quality-selector {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            padding: 0.5rem;
+        }
+
+        .quality-selector:focus {
+            background: rgba(255,255,255,0.2);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .film-title {
+                font-size: 1.8rem;
+            }
+            
+            .film-meta {
+                gap: 1rem;
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .film-info {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('client_index') }}">
+                <i class="fas fa-play-circle me-2"></i>Mon Espace Client
+            </a>
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('client_index') }}" class="back-btn">
+                    <i class="fas fa-arrow-left me-2"></i>Retour
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Lecteur vidéo -->
+        <div class="player-container position-relative">
+            <div class="loading-spinner" id="loadingSpinner">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <video id="videoPlayer" class="custom-video-player" controls preload="metadata" 
+                   poster="{% if film.thumbnail %}{{ url_for('get_thumbnail', filename=film.thumbnail) }}{% endif %}">
+                <source src="{{ url_for('stream_film', film_id=film.id) }}" type="video/mp4">
+                Votre navigateur ne supporte pas la lecture vidéo HTML5.
+            </video>
+        </div>
+
+        <!-- Informations du film -->
+        <div class="film-info">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="film-title">{{ film.title }}</h1>
+                    
+                    <div class="film-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>{{ film.year }}</span>
+                        </div>
+                        {% if film.duration %}
+                        <div class="meta-item">
+                            <i class="fas fa-clock"></i>
+                            <span>{{ film.get_formatted_duration() }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="meta-item">
+                            <i class="fas fa-tag"></i>
+                            <span>{{ film.genre|title }}</span>
+                        </div>
+                    </div>
+                    
+                    <p class="film-description">{{ film.description }}</p>
+                </div>
+                
+                <div class="col-md-4 text-center">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('download_content', content_type='film', content_id=film.id) }}" 
+                           class="download-btn">
+                            <i class="fas fa-download me-2"></i>Télécharger
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('videoPlayer');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            
+            // Gestion du loading
+            video.addEventListener('loadstart', function() {
+                loadingSpinner.style.display = 'block';
+            });
+            
+            video.addEventListener('canplay', function() {
+                loadingSpinner.style.display = 'none';
+            });
+            
+            video.addEventListener('waiting', function() {
+                loadingSpinner.style.display = 'block';
+            });
+            
+            video.addEventListener('playing', function() {
+                loadingSpinner.style.display = 'none';
+            });
+            
+            // Sauvegarde de la position de lecture
+            const filmId = '{{ film.id }}';
+            const storageKey = `video_position_film_${filmId}`;
+            
+            // Charger la position sauvegardée
+            const savedPosition = localStorage.getItem(storageKey);
+            if (savedPosition && parseFloat(savedPosition) > 0) {
+                video.addEventListener('loadedmetadata', function() {
+                    video.currentTime = parseFloat(savedPosition);
+                });
+            }
+            
+            // Sauvegarder la position toutes les 5 secondes
+            setInterval(function() {
+                if (video.currentTime > 0) {
+                    localStorage.setItem(storageKey, video.currentTime.toString());
+                }
+            }, 5000);
+            
+            // Sauvegarder avant de quitter la page
+            window.addEventListener('beforeunload', function() {
+                if (video.currentTime > 0) {
+                    localStorage.setItem(storageKey, video.currentTime.toString());
+                }
+            });
+            
+            // Contrôles clavier
+            document.addEventListener('keydown', function(e) {
+                if (e.target.tagName.toLowerCase() !== 'input') {
+                    switch(e.code) {
+                        case 'Space':
+                            e.preventDefault();
+                            if (video.paused) {
+                                video.play();
+                            } else {
+                                video.pause();
+                            }
+                            break;
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            video.currentTime = Math.max(0, video.currentTime - 10);
+                            break;
+                        case 'ArrowRight':
+                            e.preventDefault();
+                            video.currentTime = Math.min(video.duration, video.currentTime + 10);
+                            break;
+                        case 'KeyF':
+                            e.preventDefault();
+                            if (video.requestFullscreen) {
+                                if (document.fullscreenElement) {
+                                    document.exitFullscreen();
+                                } else {
+                                    video.requestFullscreen();
+                                }
+                            }
+                            break;
+                    }
+                }
+            });
+            
+            // Afficher les contrôles personnalisés
+            video.addEventListener('dblclick', function() {
+                if (video.requestFullscreen) {
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else {
+                        video.requestFullscreen();
+                    }
+                }
+            });
+            
+            // Notification de reprise de lecture
+            if (savedPosition && parseFloat(savedPosition) > 30) {
+                video.addEventListener('loadedmetadata', function() {
+                    showNotification('Reprendre la lecture là où vous vous êtes arrêté ?', 'info', {
+                        action: 'Reprendre',
+                        callback: function() {
+                            video.currentTime = parseFloat(savedPosition);
+                        }
+                    });
+                }, { once: true });
+            }
+            
+            // Fonction de notification
+            function showNotification(message, type = 'info', options = {}) {
+                const notification = document.createElement('div');
+                notification.className = `alert alert-${type} position-fixed d-flex align-items-center justify-content-between`;
+                notification.style.cssText = `
+                    top: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                    min-width: 350px;
+                    opacity: 0;
+                    transform: translateX(100%);
+                    transition: all 0.3s ease;
+                `;
+                
+                let notificationHTML = `<span>${message}</span>`;
+                if (options.action) {
+                    notificationHTML += `
+                        <div>
+                            <button class="btn btn-sm btn-primary me-2" onclick="this.parentElement.parentElement.style.display='none'; (${options.callback})()">
+                                ${options.action}
+                            </button>
+                            <button class="btn-close" onclick="this.parentElement.parentElement.style.display='none'"></button>
+                        </div>
+                    `;
+                } else {
+                    notificationHTML += `<button class="btn-close" onclick="this.parentElement.style.display='none'"></button>`;
+                }
+                
+                notification.innerHTML = notificationHTML;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.opacity = '1';
+                    notification.style.transform = 'translateX(0)';
+                }, 100);
+                
+                if (!options.action) {
+                    setTimeout(() => {
+                        notification.style.opacity = '0';
+                        notification.style.transform = 'translateX(100%)';
+                        setTimeout(() => {
+                            if (notification.parentNode) {
+                                notification.parentNode.removeChild(notification);
+                            }
+                        }, 300);
+                    }, 5000);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
