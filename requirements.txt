@@ -7,3 +7,4 @@ python-dotenv==1.0.0
 Pillow==10.4.0
 python-telegram-bot==20.5
 gunicorn==22.0.0
+Werkzeug==2.3.7
